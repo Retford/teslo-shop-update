@@ -5,10 +5,15 @@ import { HomePage } from './shop/pages/home/HomePage';
 import { ProductPage } from './shop/pages/product/ProductPage';
 import { GenderPage } from './shop/pages/gender/GenderPage';
 import { LoginPage } from './auth/page/login/LoginPage';
-import { RegisterPage } from './auth/register/RegisterPage';
+import { RegisterPage } from './auth/page/register/RegisterPage';
 import { DashboardPage } from './admin/page/dashboard/DashboardPage';
 import { AdminProductPage } from './admin/page/product/AdminProductPage';
 import { AdminProductsPage } from './admin/page/products/AdminProductsPage';
+
+import {
+  AdminRoute,
+  NotAuthenticatedRoute,
+} from './components/routes/ProtectedRoutes';
 
 const AuthLayout = lazy(() => import('./auth/layouts/AuthLayout'));
 const ShopLayout = lazy(() => import('./shop/layouts/ShopLayout'));
@@ -35,7 +40,11 @@ export const appRouter = createBrowserRouter([
   },
   {
     path: '/auth',
-    element: <AuthLayout />,
+    element: (
+      <NotAuthenticatedRoute>
+        <AuthLayout />
+      </NotAuthenticatedRoute>
+    ),
     children: [
       {
         index: true,
@@ -53,7 +62,11 @@ export const appRouter = createBrowserRouter([
   },
   {
     path: '/admin',
-    element: <AdminLayout />,
+    element: (
+      <AdminRoute>
+        <AdminLayout />
+      </AdminRoute>
+    ),
     children: [
       {
         index: true,

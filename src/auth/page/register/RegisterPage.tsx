@@ -1,16 +1,42 @@
+import { useAuthStore } from '@/auth/store/auth.store';
 import { CustomLogo } from '@/components/custom/CustomLogo';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Link } from 'react-router';
+import { useState, type FormEvent } from 'react';
+import { Link, useNavigate } from 'react-router';
+import { toast } from 'sonner';
 
 export const RegisterPage = () => {
+  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+  const { register } = useAuthStore();
+  const handleRegister = async (event: FormEvent<HTMLFormElement>) => {
+    setIsLoading(true);
+    event.preventDefault();
+    const formData = new FormData(event.target as HTMLFormElement);
+    const fullName = formData.get('fullName') as string;
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+
+    const isValid = await register({ fullName, email, password });
+
+    if (isValid) {
+      navigate('/');
+      return;
+    }
+
+    toast.error('No se pudo crear un usuario con estos datos');
+
+    setIsLoading(false);
+  };
+
   return (
     <div className='flex flex-col gap-6'>
       <Card className='overflow-hidden p-0'>
         <CardContent className='grid p-0 md:grid-cols-2'>
-          <form className='p-6 md:p-8'>
+          <form className='p-6 md:p-8' onSubmit={handleRegister}>
             <div className='flex flex-col gap-6'>
               <div className='flex flex-col items-center text-center'>
                 <CustomLogo />
@@ -20,13 +46,20 @@ export const RegisterPage = () => {
               </div>
               <div className='grid gap-2'>
                 <Label htmlFor='name'>Nombre</Label>
-                <Input id='name' type='text' placeholder='Nombre' required />
+                <Input
+                  id='name'
+                  type='text'
+                  name='fullName'
+                  placeholder='Nombre'
+                  required
+                />
               </div>
               <div className='grid gap-2'>
                 <Label htmlFor='email'>Correo</Label>
                 <Input
                   id='email'
                   type='email'
+                  name='email'
                   placeholder='mail@google.com'
                   required
                 />
@@ -44,11 +77,12 @@ export const RegisterPage = () => {
                 <Input
                   id='password'
                   type='password'
+                  name='password'
                   required
                   placeholder='Contraseña'
                 />
               </div>
-              <Button type='submit' className='w-full'>
+              <Button type='submit' className='w-full' disabled={isLoading}>
                 Crear cuenta
               </Button>
               <div className='relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border'>

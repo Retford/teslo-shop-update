@@ -6,6 +6,14 @@ const tesloAPI = axios.create({
   baseURL: BASE_URL,
 });
 
-// TODO: interceptores
+// Interceptor
+tesloAPI.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  return config;
+});
 
 export { tesloAPI };
