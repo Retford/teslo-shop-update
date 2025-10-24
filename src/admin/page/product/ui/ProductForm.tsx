@@ -6,15 +6,21 @@ import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import type { Product, Size } from '@/shop/interfaces/product.interface';
 import { X, SaveAll, Tag, Plus, Upload } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 
 interface Props {
   title: string;
   subTitle: string;
   product: Product;
-  onSubmit: (productLike: Partial<Product>) => Promise<void>;
+  onSubmit: (
+    productLike: Partial<Product> & { files?: File[] }
+  ) => Promise<void>;
   isPending: boolean;
+}
+
+interface FormInputs extends Product {
+  files?: File[];
 }
 
 const availableSizes: Size[] = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
@@ -33,65 +39,52 @@ export const ProductForm = ({
     getValues,
     setValue,
     watch,
-  } = useForm({
-    defaultValues: product,
+    reset,
+  } = useForm<FormInputs>({
+    defaultValues: { ...product, files: [] },
   });
+
+  const labelInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    reset({
+      ...product,
+      files: [],
+    });
+  }, [product, reset]);
 
   const selectedSizes = watch('sizes');
   const selectedTags = watch('tags');
   const currentStock = watch('stock');
-
-  const labelInputRef = useRef<HTMLInputElement>(null);
+  const uploadedImages = watch('files') || [];
+  const currentImages = watch('images') || [];
 
   const [dragActive, setDragActive] = useState(false);
 
   const addTag = () => {
-    // if (newTag.trim() && !product.tags.includes(newTag.trim())) {
     const newTag = labelInputRef.current!.value;
     if (newTag === '') return;
     const newTagSet = new Set(getValues('tags'));
     newTagSet.add(newTag);
     setValue('tags', Array.from(newTagSet));
-    // setProduct((prev) => ({
-    //   ...prev,
-    //   tags: [...prev.tags, newTag.trim()],
-    // }));
-    // }
   };
 
   const removeTag = (tag: string) => {
     const newTagSet = new Set(getValues('tags'));
     newTagSet.delete(tag);
     setValue('tags', Array.from(newTagSet));
-    // setProduct((prev) => ({
-    //   ...prev,
-    //   tags: prev.tags.fi lter((tag) => tag !== tagToRemove),
-    // }));
   };
 
   const addSize = (size: Size) => {
     const sizeSet = new Set(getValues('sizes'));
-
     sizeSet.add(size);
     setValue('sizes', Array.from(sizeSet));
-
-    // if (!product.sizes.includes(size)) {
-    //   setProduct((prev) => ({
-    //     ...prev,
-    //     sizes: [...prev.sizes, size],
-    //   }));
-    // }
   };
 
   const removeSize = (size: Size) => {
     const sizeSet = new Set(getValues('sizes'));
     sizeSet.delete(size);
     setValue('sizes', Array.from(sizeSet));
-
-    // setProduct((prev) => ({
-    //   ...prev,
-    //   sizes: prev.sizes.filter((size) => size !== sizeToRemove),
-    // }));
   };
 
   const handleDrag = (e: React.DragEvent) => {
@@ -109,17 +102,26 @@ export const ProductForm = ({
     e.stopPropagation();
     setDragActive(false);
     const files = e.dataTransfer.files;
-    console.log(files);
+    if (!files) return;
+
+    const currentFiles = getValues('files') || [];
+    setValue('files', [...currentFiles, ...Array.from(files)]);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    console.log(files);
+
+    if (!files) return;
+
+    const currentFiles = getValues('files') || [];
+    setValue('files', [...currentFiles, ...Array.from(files)]);
   };
 
-  // const onSubmit = (productLike: Product) => {
-  //   console.log('🚀 ~ onSubmit ~ productLike:', productLike);
-  // };
+  const handleRemove = (image: string) => {
+    const imageSet = new Set(getValues('images'));
+    imageSet.delete(image);
+    setValue('images', Array.from(imageSet));
+  };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
@@ -453,12 +455,13 @@ export const ProductForm = ({
               </div>
 
               {/* Current Images */}
+
               <div className='mt-6 space-y-3'>
                 <h3 className='text-sm font-medium text-slate-700'>
                   Imágenes actuales
                 </h3>
                 <div className='grid grid-cols-2 gap-3'>
-                  {product.images.map((image, index) => (
+                  {currentImages.map((image, index) => (
                     <div key={index} className='relative group'>
                       <div className='aspect-square bg-slate-100 rounded-lg border border-slate-200 flex items-center justify-center'>
                         <img
@@ -467,13 +470,38 @@ export const ProductForm = ({
                           className='w-full h-full object-cover rounded-lg'
                         />
                       </div>
-                      <button className='absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200'>
+                      <button
+                        type='button'
+                        onClick={() => handleRemove(image)}
+                        className='cursor-pointer absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200'
+                      >
                         <X className='h-3 w-3' />
                       </button>
                       <p className='mt-1 text-xs text-slate-600 truncate'>
                         {image}
                       </p>
                     </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* imágenes por cargar */}
+              <div
+                className={cn('mt-6 space-y-3', {
+                  hidden: uploadedImages.length === 0,
+                })}
+              >
+                <h3 className='text-sm font-medium text-slate-700'>
+                  Imágenes por cargar
+                </h3>
+                <div className='grid grid-cols-2 gap-3'>
+                  {uploadedImages.map((file, index) => (
+                    <img
+                      src={URL.createObjectURL(file)}
+                      key={index}
+                      alt='Product'
+                      className='w-full h-full object-cover rounded-lg'
+                    />
                   ))}
                 </div>
               </div>

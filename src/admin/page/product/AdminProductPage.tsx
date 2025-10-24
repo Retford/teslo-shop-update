@@ -1,10 +1,10 @@
 import { Navigate, useNavigate, useParams } from 'react-router';
+import { toast } from 'sonner';
 
 import { useProductByID } from '@/admin/hooks/useProductByID';
 import { CustomFullScreenLoading } from '@/components/custom/CustomFullScreenLoading';
 import { ProductForm } from './ui/ProductForm';
 import type { Product } from '@/shop/interfaces/product.interface';
-import { toast } from 'sonner';
 
 export const AdminProductPage = () => {
   const { id } = useParams();
@@ -17,15 +17,15 @@ export const AdminProductPage = () => {
     mutation,
   } = useProductByID(id || '');
 
-  // if (mutation.isPending) return <CustomFullScreenLoading />;
-
   const title = id === 'new' ? 'Nuevo producto' : 'Editar producto';
   const subTile =
     id === 'new'
       ? 'Aquí puedes crear un nuevo producto.'
       : 'Aquí puedes editar el producto.';
 
-  const handleSubmit = async (productLike: Partial<Product>) => {
+  const handleSubmit = async (
+    productLike: Partial<Product> & { files?: File[] }
+  ) => {
     await mutation.mutateAsync(productLike, {
       onSuccess: (data) => {
         toast.success('Producto actualizado correctamente', {
